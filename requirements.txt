@@ -1,2 +1,6 @@
 fastapi
+pytest
+httpx
+pydantic
+email-validator
 uvicorn
