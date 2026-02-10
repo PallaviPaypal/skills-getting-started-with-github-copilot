@@ -19,12 +19,26 @@ document.addEventListener("DOMContentLoaded", () => {
         activityCard.className = "activity-card";
 
         const spotsLeft = details.max_participants - details.participants.length;
+        const participantsList = details.participants.length > 0
+          ? details.participants.map(p => `
+              <li class="participant-item" data-participant="${p}">
+                <span class="participant-name">${p}</span>
+                <span class="delete-participant" title="Remove participant">&times;</span>
+              </li>
+            `).join('')
+          : '<li class="participant-item"><em>No participants yet</em></li>';
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <strong>Participants:</strong>
+            <ul class="participants-list" data-activity="${name}">
+              ${participantsList}
+            </ul>
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -34,6 +48,33 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+
+        // Add event listener for delete icons after rendering
+        setTimeout(() => {
+          const list = activityCard.querySelector('.participants-list');
+          if (list) {
+            list.addEventListener('click', async (e) => {
+              if (e.target.classList.contains('delete-participant')) {
+                const li = e.target.closest('.participant-item');
+                const participantEmail = li?.dataset.participant;
+                if (!participantEmail) return;
+                // Call API to unregister
+                try {
+                  const response = await fetch(`/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(participantEmail)}`, {
+                    method: 'POST',
+                  });
+                  if (response.ok) {
+                    li.remove();
+                  } else {
+                    alert('Failed to remove participant.');
+                  }
+                } catch (err) {
+                  alert('Error removing participant.');
+                }
+              }
+            });
+          }
+        }, 0);
       });
     } catch (error) {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
